@@ -13,6 +13,7 @@ import { useState, useEffect, useRef } from "react";
 import { Web3Button } from "@web3modal/react";
 import { fetchSigner, getContract, getProvider, getAccount } from "@wagmi/core";
 import { useAccount } from "wagmi";
+// import { info } from "console";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,7 +24,13 @@ export default function Home() {
   const [accountStatus, setAccountStatus] = useState(false);
   const [timeByRound, setTimeByRound] = useState(0);
   const [currentPrice, setCurrentPrice] = useState(0);
+  const [isWinner, setIsWinner] = useState("");
   // const [addressInWhitelist, setAddressInWhitelist] = useState(false);
+  const [winLogs, setWinLogs] = useState([]);
+
+  // const stateArray = [{ address: "0", state: 0 }];
+  // const [addressState, setAddressState] = useState(stateArray);
+  // const [currentState, setCurrentState] = useState(0);
 
   function convertTime(value) {
     return Math.floor(value / 60) + ":" + (value % 60 ? value % 60 : "00");
@@ -49,12 +56,232 @@ export default function Home() {
     }
   };
 
+  const logsWinner = async () => {
+    try {
+      const provider = getProvider();
+      const bettingContract = getContract({
+        address: BETTING_CONTRACT_ADDRESS,
+        abi: abi_betting,
+        signerOrProvider: provider,
+      });
+      const winFilter = await bettingContract.filters.Win();
+      // const winFilter = await bettingContract.filters.Win(winAddress);
+      const startBlock = 28923549;
+      const endBlock = await provider.getBlockNumber();
+      let allWinEvents = [];
+
+      for (let i = startBlock; i < endBlock; i += 5000) {
+        const _startBlock = i;
+        const _endBlock = Math.min(endBlock, i + 4999);
+        let winLogs = await bettingContract.queryFilter(
+          winFilter,
+          _startBlock,
+          _endBlock
+        );
+        allWinEvents = [...allWinEvents, ...winLogs];
+      }
+      // console.log(allWinEvents);
+      setWinLogs(allWinEvents);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // const updateState = (address, state) => {
+  //   let userX;
+  //   userX = addressState.find((item) => {
+  //     item.address == address;
+  //   });
+  //   console.log(userX);
+  //   if (userX) {
+  //     let newStateArray = addressState.map((item) => {
+  //       if (item.address == address) {
+  //         item.state = state;
+  //       }
+  //       return item;
+  //     });
+  //     setAddressState(newStateArray);
+  //   } else {
+  //     let newAddressState = [];
+  //     newAddressState = [...addressState, { address: address, state: state }];
+  //     console.log(address, state, newAddressState);
+  //     console.log("до добавления", addressState);
+  //     setAddressState(newAddressState);
+  //     console.log(addressState);
+  //   }
+  // };
+
+  // const checkResult = async () => {
+  //   try {
+  //     const provider = getProvider();
+  //     console.log(provider);
+  //     const bettingContract = getContract({
+  //       address: BETTING_CONTRACT_ADDRESS,
+  //       abi: abi_betting,
+  //       signerOrProvider: provider,
+  //     });
+  //     console.log(bettingContract);
+  //     const signer = await fetchSigner();
+  //     const betAddress = await signer.getAddress();
+  //     console.log(betAddress);
+  //     const betFilter = await bettingContract.filters.BetPlaced(betAddress);
+  //     console.log(betFilter);
+  //     const startBlock = 28923549;
+  //     const endBlock = await provider.getBlockNumber();
+  //     let allBetEvents = [];
+
+  //     for (let i = startBlock; i < endBlock; i += 5000) {
+  //       const _startBlock = i;
+  //       const _endBlock = Math.min(endBlock, i + 4999);
+  //       let betLogs = await bettingContract.queryFilter(
+  //         betFilter,
+  //         _startBlock,
+  //         _endBlock
+  //       );
+  //       allBetEvents = [...allBetEvents, ...betLogs];
+  //     }
+
+  //     console.log("Массив ставок", allBetEvents);
+
+  //     if (allBetEvents == []) {
+  //       updateState(betAddress, 0);
+  //     } else if (allBetEvents) {
+  //       const nowTimeBlock = await provider.getBlock();
+  //       console.log(nowTimeBlock);
+
+  //       const nowTime = nowTimeBlock.timestamp;
+  //       console.log(nowTime);
+
+  //       const block = await provider.getBlock(allBetEvents[0].blockNumber);
+  //       const txTime = block.timestamp;
+  //       console.log(txTime);
+  //       if (txTime + (1800 - (txTime % 1800)) >= nowTime) {
+  //         updateState(betAddress, 1);
+  //       } else {
+  //         const winFilter = await bettingContract.filters.Win(betAddress);
+  //         console.log("Фильтр выигрыш", winFilter);
+  //         const newEndBlock = await provider.getBlockNumber();
+  //         let allWinEvents = [];
+
+  //         for (let i = startBlock; i < newEndBlock; i += 5000) {
+  //           const _startBlock = i;
+  //           const _endBlock = Math.min(endBlock, i + 4999);
+  //           let winLogs = await bettingContract.queryFilter(
+  //             winFilter,
+  //             _startBlock,
+  //             _endBlock
+  //           );
+  //           allWinEvents = [...allWinEvents, ...winLogs];
+  //         }
+  //         console.log("выигрышный массив", allWinEvents);
+  //         if (allWinEvents) {
+  //           updateState(betAddress, 2);
+  //           console.log("конечный", addressState);
+  //         } else {
+  //           updateState(betAddress, 3);
+  //           console.log(addressState);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  // const takeState = async () => {
+  //   try {
+  //     const signer = await fetchSigner();
+  //     const currentSignerAddress = await signer.getAddress();
+
+  //     let user = addressState.find((item) => {
+  //       item.address == currentSignerAddress;
+  //     });
+  //     if (user) {
+  //       setCurrentState(user.state);
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  // const resultBlock = () => {
+  //   takeState();
+  //   if (currentState == 1) {
+  //     return (
+  //       <div>
+  //         <p>The results will appear after the end of the round</p>
+  //       </div>
+  //     );
+  //   } else if (currentState == 2) {
+  //     return (
+  //       <>
+  //         <MintedBlock />
+  //         <EventBlock />
+  //       </>
+  //     );
+  //   } else if (currentState == 3) {
+  //     return (
+  //       <div>
+  //         <p>Unfortunately you lost</p>
+  //         <EventBlock />
+  //       </div>
+  //     );
+  //   } else {
+  //     return <></>;
+  //   }
+  // };
+
+  const checkResult = async () => {
+    const text = "Please wait ...";
+    setIsWinner(text);
+    try {
+      if (nfts) {
+        const textMinted = "You are a winner. You have alredy mint NFT";
+        setIsWinner(textMinted);
+      }
+
+      await logsWinner();
+      const signer = await fetchSigner();
+      const winAddress = await signer.getAddress();
+      const winners = winLogs.reverse().map((event) => {
+        return event.args.winner.toString();
+      });
+      await getNfts();
+      if (winners.includes(winAddress) && nfts == 0) {
+        const textWin = "You are a winner. You can mint NFT";
+        setIsWinner(textWin);
+      } else {
+        // const loseFilter = await bettingContract.filters.Lose(winAddress);
+        // const endBlock = await provider.getBlockNumber();
+        // let allLoseEvents = [];
+        // for (let i = startBlock; i < endBlock; i += 5000) {
+        //   const _startBlock = i;
+        //   const _endBlock = Math.min(endBlock, i + 4999);
+        //   let loseLogs = await bettingContract.queryFilter(
+        //     loseFilter,
+        //     _startBlock,
+        //     _endBlock
+        //   );
+        //   allLoseEvents = [...allLoseEvents, ...loseLogs];
+        // }
+        // if (allLoseEvents) {
+        const textLoose = "Sorry, you are loser. You cant mint NFT";
+        setIsWinner(textLoose);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const renderBlock = () => {
     if (accountStatus) {
       return (
         <>
           <BetBlock />
-          {/* <MintedBlock /> */}
+          <div className={styles.gridMax}>
+            <MintedBlock />
+            <EventBlock />
+          </div>
         </>
       );
     }
@@ -97,6 +324,9 @@ export default function Home() {
           If the round is over, wait for the next one <br />
           (wait no more than 15 minutes)
         </p>
+        <button className={styles.button} onClick={checkResult}>
+          check result
+        </button>
       </div>
     );
   }
@@ -104,7 +334,7 @@ export default function Home() {
   function MintedBlock() {
     return (
       <div>
-        <h4>You are {/* {win} */} the winner! You can mint NFT</h4>
+        <h4>&nbsp;{isWinner}</h4>
         <button className={styles.button} onClick={mintByLine}>
           Mint by queue
         </button>
@@ -124,6 +354,22 @@ export default function Home() {
           </button>
         </p>
         <p>Your number of nfts: {nfts}</p>
+      </div>
+    );
+  }
+
+  function EventBlock() {
+    logsWinner();
+    return (
+      <div>
+        <h3>All winners</h3>
+        {winLogs.reverse().map((event, index) => {
+          return (
+            <div key={index}>
+              <p>{event.args.winner.toString()}</p>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -149,12 +395,13 @@ export default function Home() {
   const betDown = async () => {
     try {
       const signer = await fetchSigner();
-
+      console.log(signer);
       const bettingContract = getContract({
         address: BETTING_CONTRACT_ADDRESS,
         abi: abi_betting,
         signerOrProvider: signer,
       });
+      console.log(bettingContract);
 
       await bettingContract.placeBet(1, {
         value: ethers.utils.parseEther("0.001"),
@@ -314,6 +561,10 @@ export default function Home() {
     if (getAccount().isDisconnected) {
       setNfts(0);
       setAccountStatus(false);
+      setIsWinner("");
+    }
+    if (getAccount().isReconnecting) {
+      setIsWinner("");
     }
   });
 

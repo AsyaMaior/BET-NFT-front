@@ -120,6 +120,19 @@
   max-width: 100%;
 }
 
+.gridMax {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(50%, auto));
+  width: var(--max-width);
+  max-width: 100%;
+  margin-top: 30px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  border-style: dashed;
+  border-color: #152544;
+  align-content: center;
+}
+
 .card {
   padding: 1rem 1.2rem;
   border-radius: var(--border-radius);
@@ -156,6 +169,10 @@
   margin: 30px;
   text-align: center;
   font-size: 1rem;
+}
+
+.mintblock h4 {
+  margin: 30px;
 }
 
 .center {
