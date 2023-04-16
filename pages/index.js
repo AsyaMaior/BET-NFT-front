@@ -13,6 +13,9 @@ import { useState, useEffect, useRef } from "react";
 import { Web3Button } from "@web3modal/react";
 import { fetchSigner, getContract, getProvider, getAccount } from "@wagmi/core";
 import { useAccount } from "wagmi";
+import ReactDOM from "react-dom";
+import Countdown from "react-countdown";
+import React from "react";
 // import { info } from "console";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -243,10 +246,11 @@ export default function Home() {
       await logsWinner();
       const signer = await fetchSigner();
       const winAddress = await signer.getAddress();
-      const winners = winLogs.reverse().map((event) => {
+      const winners = winLogs.map((event) => {
         return event.args.winner.toString();
       });
       await getNfts();
+      console.log(winners.includes(winAddress));
       if (winners.includes(winAddress) && nfts == 0) {
         const textWin = "You are a winner. You can mint NFT";
         setIsWinner(textWin);
@@ -363,7 +367,7 @@ export default function Home() {
     return (
       <div>
         <h3>All winners</h3>
-        {winLogs.reverse().map((event, index) => {
+        {winLogs.map((event, index) => {
           return (
             <div key={index}>
               <p>{event.args.winner.toString()}</p>
